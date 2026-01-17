@@ -132,6 +132,17 @@ export const AppSidebar = () => {
                             >
 
                                 <div className="px-2 py-3 border-t border-b">
+
+                                    <div className="flex items-center gap-3 px-4 py-4 bg-sidebar-accent/30 rounded-t-lg"> <Avatar className="h-12 w-12 rounded-1g shrink-0">
+                                        <AvatarImage src={userAvatar || "/placeholder.svg"} alt={userName} /> <AvatarFallback className="rounded-lg">
+                                            {userInitials}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-sm">{userName}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                                        </div>
+                                    </div>
                                     <DropdownMenuItem asChild>
                                         <button
                                             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
