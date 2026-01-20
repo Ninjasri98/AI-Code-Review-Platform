@@ -5,6 +5,46 @@ import { fetchUserContributions, getGithubToken } from "@/modules/github/lib/git
 import { headers } from "next/headers";
 import { Octokit } from "octokit";
 
+export async function getContributionStats(){
+    try {
+
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+
+        if (!session?.user) {
+            throw new Error("Unauthorized")
+        }
+
+        const token = await getGithubToken();
+        const octokit = new Octokit({ auth: token });
+
+        //get users github username
+        const { data: user } = await octokit.rest.users.getAuthenticated();
+
+         //fetch contribution stats
+        const calendar = await fetchUserContributions(token, user.login);
+
+        if(!calendar){
+            return null;
+        }
+
+        const contributions = calendar.weeks.flatMap(week =>
+            week.contributionDays.map(day => ({
+                date: day.date,
+                count: day.contributionCount,
+                level : Math.min(Math.floor(day.contributionCount / 3), 4) // Level from 0 to 4
+            }))
+        )
+
+        return contributions;
+        
+    } catch (error) {
+        console.error("Error fetching Contribution Stats:", error);
+        return null;
+    }
+}
+
 export async function getDashboardStats() {
     try {
         const session = await auth.api.getSession({

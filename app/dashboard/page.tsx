@@ -1,6 +1,7 @@
 "use client"
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getDashboardStats, getMonthlyActivity } from '@/modules/dashboard/actions'
+import ContributionGraph from '@/modules/dashboard/components/contribution-graph'
 import { useQuery } from '@tanstack/react-query'
 import { GitBranch, GitCommit, GitPullRequest, MessageSquare } from 'lucide-react'
 import React from 'react'
@@ -67,6 +68,17 @@ const MainPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Contribution Activity</CardTitle>
+          <CardDescription>Visualizing your coding frequency over the last year
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ContributionGraph />
+        </CardContent>
+      </Card>
     </div>
   )
 }
