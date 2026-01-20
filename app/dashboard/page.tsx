@@ -1,9 +1,11 @@
 "use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
 import { getDashboardStats, getMonthlyActivity } from '@/modules/dashboard/actions'
 import ContributionGraph from '@/modules/dashboard/components/contribution-graph'
 import { useQuery } from '@tanstack/react-query'
 import { GitBranch, GitCommit, GitPullRequest, MessageSquare } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import React from 'react'
 
 const MainPage = () => {
@@ -79,6 +81,45 @@ const MainPage = () => {
           <ContributionGraph />
         </CardContent>
       </Card>
+
+
+      <div className='grid gap-4 md: grid-cols-2'>
+        <Card className='col-span-2'>
+          <CardHeader>
+            <CardTitle>Activity Overview</CardTitle>
+            <CardDescription>Monthly breakdown of commits, PRs, and reviews (last 6 months)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {
+              isLoadingActivity ? (
+                <div className="h-80 w-full flex items-center justify-center">
+                  <Spinner />
+                </div>) : (
+                <div className='h-80 w-full'>
+                  <ResponsiveContainer width={"100%"} height={"100%"}>
+                    <BarChart data={monthlyActivity || []}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'var (--background)',
+                          borderColor: 'var (--border)'
+                        }}
+                        itemStyle={{ color: 'var(--foreground)' }} />
+
+                      <Legend />
+                      <Bar dataKey="commits" name="Commits" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="prs" name="Pull Requests" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="reviews" name="AI Reviews" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>)
+            }
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
