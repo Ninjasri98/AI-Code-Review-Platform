@@ -11,7 +11,7 @@ interface ContributionData {
                 weeks: {
                     contributionDays: {
                         contributionCount: number;
-                        date: string | Date;
+                        date: string ;
                         color: string;
                     }[];
                 }[];

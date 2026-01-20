@@ -37,7 +37,10 @@ export async function getContributionStats(){
             }))
         )
 
-        return contributions;
+        return {
+            contributions,
+            totalContributions: calendar.totalContributions
+        };
         
     } catch (error) {
         console.error("Error fetching Contribution Stats:", error);
