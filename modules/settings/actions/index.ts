@@ -144,3 +144,39 @@ export async function disconnectRepository(repositoryId : string) {
         return {sucess : false, error : "Failed to disconnect repository"}
     }
 }
+
+export async function disconnectAllRepositories() {
+    try {
+        const session = await auth.api.getSession({
+            headers : await headers()
+        })    
+
+        if(!session?.user){
+            throw new Error("Unauthorized")
+        }
+
+        const repositories = await prisma.repository.findMany({
+            where : {
+                userId : session.user.id
+            }
+        })
+
+        await Promise.all(repositories.map(async(repo) => 
+            await deleteWebhook(repo.owner,repo.name)
+        ));
+
+        const result = await prisma.repository.deleteMany({
+            where : {
+                userId : session.user.id
+            }
+        })
+
+        revalidatePath("/dashboard/settings");
+        revalidatePath("/dashboard/repository");
+        
+        return {sucess : true, count : result.count}
+    } catch (error) {
+        console.error("Error disconnecting all repositories",error);
+        return {sucess : false, error : "Failed to disconnect all repositories"}
+    }
+}
