@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { deleteWebhook } from "@/modules/github/lib/github";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
@@ -101,5 +102,45 @@ export async function getConnectedRepositories(){
     } catch (error) {
         console.error("Error Fetching connected repositories",error);
         return []
+    }
+}
+
+export async function disconnectRepository(repositoryId : string) {
+    try {
+        const session = await auth.api.getSession({
+            headers : await headers()
+        })
+
+        if(!session?.user){
+            throw new Error("Unauthorized")
+        }
+
+        const repository = await prisma.repository.findUnique({
+            where : {
+                id : repositoryId,
+                userId : session.user.id
+            }
+        })
+
+        if(!repository){
+            throw new Error("Repository not found")
+        }
+
+        await deleteWebhook(repository.owner,repository.name);
+
+        await prisma.repository.delete({
+            where:{
+                id : repositoryId,
+                userId : session.user.id
+            }
+        })
+
+        revalidatePath("/dashboard/settings","page");
+        revalidatePath("/dashboard/repository","page");
+
+        return { sucess : true }
+    } catch (error) {
+        console.error("Error disconnecting repository",error);
+        return {sucess : false, error : "Failed to disconnect repository"}
     }
 }
