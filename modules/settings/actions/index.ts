@@ -138,10 +138,10 @@ export async function disconnectRepository(repositoryId : string) {
         revalidatePath("/dashboard/settings","page");
         revalidatePath("/dashboard/repository","page");
 
-        return { sucess : true }
+        return { success : true }
     } catch (error) {
         console.error("Error disconnecting repository",error);
-        return {sucess : false, error : "Failed to disconnect repository"}
+        return {success : false, error : "Failed to disconnect repository"}
     }
 }
 
@@ -174,9 +174,9 @@ export async function disconnectAllRepositories() {
         revalidatePath("/dashboard/settings");
         revalidatePath("/dashboard/repository");
         
-        return {sucess : true, count : result.count}
+        return {success : true, count : result.count}
     } catch (error) {
         console.error("Error disconnecting all repositories",error);
-        return {sucess : false, error : "Failed to disconnect all repositories"}
+        return {success : false, error : "Failed to disconnect all repositories"}
     }
 }
