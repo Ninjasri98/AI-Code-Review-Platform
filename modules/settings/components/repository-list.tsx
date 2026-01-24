@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, Trash2 } from "lucide-react";
 
 export function RepositoryList() {
     const queryClient = useQueryClient();
@@ -113,6 +113,68 @@ export function RepositoryList() {
                     )}
                 </div>
             </CardHeader>
+            <CardContent>
+                {!repositories || repositories.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                        <p>No repositories connected yet.</p>
+                        <p className="text-sm mt-2">
+                            Connect repositories from the Repository page.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {repositories.map((repo) => (
+                            <div
+                                key={repo.id}
+                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold truncate">{repo.fullName}</h3>
+                                        <a
+                                            href={repo.url} target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-muted-foreground hover:text-foreground">
+                                            <ExternalLink className="h-4 w-4" />
+                                        </a>
+                                    </div>
+
+                                </div>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="ml-4 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Disconnect Repository?</AlertDialogTitle> <AlertDialogDescription>
+                                                This will disconnect <strong>{repo.fullName}</strong> and delete
+                                                all associated AI reviews.
+                                                This action cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={() => disconnectMutation.mutate(repo.id)}
+                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                disabled={disconnectMutation.isPending}
+                                            >
+                                                {disconnectMutation.isPending ? "Disconnecting..." : "Disconnect"}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </CardContent>
         </Card>
     )
 }

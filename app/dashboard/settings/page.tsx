@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileForm } from '@/modules/settings/components/profile-form';
+import { RepositoryList } from '@/modules/settings/components/repository-list';
 import React from 'react'
 
 const SettingsPage = () => {
@@ -12,6 +13,7 @@ const SettingsPage = () => {
                     repositories</p>
             </div>
             <ProfileForm />
+            <RepositoryList />
         </div>
     )
 }
