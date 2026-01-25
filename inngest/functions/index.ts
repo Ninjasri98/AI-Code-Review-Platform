@@ -1,5 +1,6 @@
 import prisma from "@/lib/db";
 import { inngest } from "../client";
+import { getRepofileContents } from "@/modules/github/lib/github";
 
 export const indexRepo = inngest.createFunction(
     {id : "index-repo"},
@@ -20,7 +21,11 @@ export const indexRepo = inngest.createFunction(
                 throw new Error("No access token found for user")
             }
 
-            
+            return await getRepofileContents(
+                account.accessToken,
+                owner,
+                repo
+            );
         })
     }
 )

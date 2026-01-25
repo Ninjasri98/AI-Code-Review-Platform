@@ -11,7 +11,7 @@ interface ContributionData {
                 weeks: {
                     contributionDays: {
                         contributionCount: number;
-                        date: string ;
+                        date: string;
                         color: string;
                     }[];
                 }[];
@@ -21,23 +21,23 @@ interface ContributionData {
 }
 
 //method for getting github access token
-export const getGithubToken = async() =>{
+export const getGithubToken = async () => {
     const session = await auth.api.getSession({
-        headers : await headers()
+        headers: await headers()
     })
 
-    if(!session){
+    if (!session) {
         throw new Error("Unauthorized")
     }
 
     const account = await prisma.account.findFirst({
-        where : {
-            userId : session.user.id,
-            providerId : "github"
+        where: {
+            userId: session.user.id,
+            providerId: "github"
         }
     })
 
-    if(!account?.accessToken){
+    if (!account?.accessToken) {
         throw new Error("GitHub access token not found")
     }
 
@@ -67,12 +67,12 @@ export async function fetchUserContributions(token: string, username: string) {
     }
     `
     try {
-        const response: ContributionData= await octokit.graphql(query,{
+        const response: ContributionData = await octokit.graphql(query, {
             username
         })
         return response.user.contributionsCollection.contributionCalendar;
     } catch (error) {
-        throw new Error("Failed to fetch user contributions : "+ error);
+        throw new Error("Failed to fetch user contributions : " + error);
     }
 }
 
@@ -80,7 +80,7 @@ export const getRepositories = async (page: number = 1, perPage: number = 10) =>
     const token = await getGithubToken();
     const octokit = new Octokit({ auth: token });
 
-    const {data} = await octokit.rest.repos.listForAuthenticatedUser({
+    const { data } = await octokit.rest.repos.listForAuthenticatedUser({
         sort: 'updated',
         direction: 'desc',
         visibility: 'all',
@@ -91,55 +91,55 @@ export const getRepositories = async (page: number = 1, perPage: number = 10) =>
     return data;
 }
 
-export const createWebhook = async(owner : string , repo : string) => {
+export const createWebhook = async (owner: string, repo: string) => {
     const token = await getGithubToken();
     const octokit = new Octokit({ auth: token });
 
     const webHookUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/api/webhooks/github`
 
-    const {data : hooks} = await octokit.rest.repos.listWebhooks({
+    const { data: hooks } = await octokit.rest.repos.listWebhooks({
         owner,
         repo
     })
 
     const existingHook = hooks.find(hook => hook.config.url === webHookUrl);
 
-    if(existingHook){
+    if (existingHook) {
         return existingHook;
     }
 
-    const {data} = await octokit.rest.repos.createWebhook({
+    const { data } = await octokit.rest.repos.createWebhook({
         owner,
         repo,
-        config : {
-            url : webHookUrl,
-            content_type : "json"
+        config: {
+            url: webHookUrl,
+            content_type: "json"
         },
-        events : ["pull_request"]
+        events: ["pull_request"]
     })
 
     return data;
 }
 
-export const deleteWebhook = async(owner : string , repo : string) => {
+export const deleteWebhook = async (owner: string, repo: string) => {
     const token = await getGithubToken();
     const octokit = new Octokit({ auth: token });
 
     const webHookUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/api/webhooks/github`;
 
     try {
-        const {data : hooks} = await octokit.rest.repos.listWebhooks({
+        const { data: hooks } = await octokit.rest.repos.listWebhooks({
             owner,
             repo
         });
 
         const hookToDelete = hooks.find(hook => hook.config.url === webHookUrl);
 
-        if(hookToDelete){
+        if (hookToDelete) {
             await octokit.rest.repos.deleteWebhook({
                 owner,
                 repo,
-                hook_id : hookToDelete.id
+                hook_id: hookToDelete.id
             })
 
             return true;
@@ -152,3 +152,59 @@ export const deleteWebhook = async(owner : string , repo : string) => {
     }
 }
 
+export async function getRepofileContents(
+    token: string,
+    owner: string,
+    repo: string,
+    path: string = ""
+): Promise<{ path: string; content: string }[]> {
+    const octokit = new Octokit({ auth: token });
+
+    const { data } = await octokit.rest.repos.getContent({
+        owner,
+        repo,
+        path
+    })
+
+
+    if (!Array.isArray(data)) {
+        // It's a file
+        if (data.type === "file" && data.content) {
+            return [{
+                path: data.path,
+                content: Buffer.from(data.content, "base64").toString("utf-8"),
+            }];
+        }
+        return [];
+
+    }
+
+
+    let files: { path: string, content: string }[] = [];
+    for (const item of data) {
+        if (item.type === "file") {
+            const { data: fileData } = await octokit.rest.repos.getContent({
+                owner,
+                repo,
+                path: item.path
+            })
+
+            if (!Array.isArray(fileData) && fileData.type === "file" && fileData.content) {
+                // Filter out non-code files if needed (images, etc.)
+                // For now, let's include everything that looks like text
+                if (!item.path.match(/\.(png||jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz)$/i)) {
+                    files.push({
+                        path: item.path,
+                        content: Buffer.from(fileData.content, "base64").toString("utf-8"),
+                    });
+                }
+            }
+        }
+        else if (item.type === "dir") {
+            const subFiles = await getRepofileContents(token, owner, repo, item.path);
+            files = files.concat(subFiles);
+        }
+    }
+
+    return files;
+}
