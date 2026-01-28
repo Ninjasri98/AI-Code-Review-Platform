@@ -1,5 +1,6 @@
 "use server";
 
+import { inngest } from "@/inngest/client";
 import prisma from "@/lib/db";
 import { getPullRequestDiff } from "@/modules/github/lib/github";
 
@@ -8,8 +9,8 @@ export async function reviewPullRequest(
     repo: string,
     prNumber: number
 ){
-
-    const repository = await prisma.repository.findFirst({
+    try {
+        const repository = await prisma.repository.findFirst({
         where : {
             owner,
             name : repo
@@ -41,5 +42,40 @@ export async function reviewPullRequest(
 
     const {title} = await getPullRequestDiff(token, owner, repo, prNumber);
 
-    
+    await inngest.send({
+        name : "pr.review.requested",
+        data : {
+            owner,
+            repo,
+            prNumber,
+            userId : repository.user.id,
+        }
+    })
+
+    return { success: true, message : "Review Queued" };
+
+    } catch (error) {
+        try {
+            const repository = await prisma.repository.findFirst({
+                where : {
+                    owner,
+                    name : repo
+            }});
+
+            if(repository){
+                await prisma.review.create({
+                    data : {
+                        repositoryId : repository.id,
+                        prNumber,
+                        prTitle : "Failed to fetch PR",
+                        prUrl : `https://github.com/${owner}/${repo}/pull/${prNumber}`,
+                        review : `Error : ${error instanceof Error ? error.message : 'Unknown error occurred' }`,
+                        status : "failed"
+                    }
+                })
+            }
+        } catch (dberror) {
+            console.error("Failed to save error to database", dberror);
+        }
+    }
 }
