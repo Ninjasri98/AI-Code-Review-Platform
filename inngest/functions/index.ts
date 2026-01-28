@@ -27,5 +27,11 @@ export const indexRepo = inngest.createFunction(
                 repo
             );
         })
+
+        //index codebase
+
+        await step.run("index-codebase", async() =>{
+            
+        })
     }
 )
