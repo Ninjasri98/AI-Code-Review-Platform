@@ -4,4 +4,4 @@ export const pinecone = new Pinecone({
     apiKey: process.env.PINECONE_DB_API_KEY!,
 })
 
-export const pineconeIndex = pinecone.Index("codeaudit-vector-db-v1");
+export const pineconeIndex = pinecone.Index("codeauditv2");
